@@ -1,0 +1,209 @@
+var scrollTop;
+var windowWidth;
+var windowHeight;
+var pageHeight;
+
+$(document).ready(function() {
+
+    resetGlobalVariable();
+
+    // START: Prevent multiple form submissions
+    var beforeValidateSubmitText = '';
+    $(document).on("beforeValidate", "form", function(event, messages, deferreds) {
+        var form = $(this);
+        var submit = $(form).find(':submit');
+        beforeValidateSubmitText = submit.html();
+
+        submit.html('<span class="fa fa-spin fa-spinner"></span> processing...');
+        submit.prop('disabled', true);
+
+        setTimeout(function(){
+            submit.html(beforeValidateSubmitText);
+            submit.prop('disabled', false);
+        }, 5000);
+    }).on("afterValidate", "form", function(event, messages, errorAttributes) {
+        var form = $(this);
+        var submit = $(form).find(':submit');
+
+        if (errorAttributes.length > 0) {
+            // submit.html(beforeValidateSubmitText);
+            submit.prop('disabled', false);
+        }
+        else if($(form).find('.has-error').length) {
+            // submit.html(beforeValidateSubmitText);
+            submit.prop('disabled', false);
+        }
+        else
+        {
+            setTimeout(function(){
+                // submit.html(beforeValidateSubmitText);
+                submit.prop('disabled', false);
+            }, 5000);
+        }
+    }).on('beforeSubmit', 'form', function (event) {
+
+        var form = $(this);
+        var submit = $(form).find(':submit');
+
+        setTimeout(function(){
+            submit.html(beforeValidateSubmitText);
+            submit.prop('disabled', false);
+        }, 5000);
+
+    });
+    // END: Prevent multiple form submissions
+
+    /* START : Calender */
+    $(".datepicker-calender-icon").click(function () {
+        $(this).parent().parent().find('input').focus();
+    });
+    /* End : Calender */
+
+    $('#make-small-nav').click(function () {
+        if($('#page-wrapper').hasClass('nav-small')){
+            $('#make-small-nav').html('<i class="fa fa-indent"></i>');
+        }
+        else{
+            $('#make-small-nav').html('<i class="fa fa-dedent"></i>');
+        }
+    });
+
+    /* START: Advanced Search */
+    $('#advancedSearchItems').click(function(){
+        $('.admin-grid-filter').show();
+    });
+
+    $('.close-advanced-search').click(function () {
+        $('.admin-grid-filter').hide();
+    });
+    /* END: Advanced Search */
+
+    /* START: Bulk Actions */
+    $('.btn-bulk-action').click(function(){
+
+        var dataAction = $(this).data('action');
+        var dataUrl = $(this).data('url');
+        var dataGridSelector = $(this).data('grid-selector');
+        var items =  $(dataGridSelector).yiiGridView('getSelectedRows');
+
+        if (items.length) {
+            if(dataAction == 'authorized'){
+                submitBulkActionData(dataUrl, items);
+            }
+            else if(dataAction == 'authorization-cancel'){
+                submitBulkActionData(dataUrl, items);
+            }
+            else if(dataAction == 'csv-export'){
+                submitBulkActionData(dataUrl, items);
+            }
+            else if(dataAction == 'cancel-delete'){
+                submitBulkActionData(dataUrl, items);
+            }
+            else if(dataAction == 'delete'){
+                var confirmDelete = confirm("Delete selected items?");
+                if (confirmDelete == true) {
+                    submitBulkActionData(dataUrl, items);
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        else{
+            alert("Please first make a selection from the list.");
+            return false;
+        }
+
+    });
+    /* END: Bulk Action */
+
+    /* START: Export Action */
+    $('.btn-export-action').click(function(){
+        var dataAction = $(this).data('action');
+        var dataUrl = $(this).data('url');
+        var dataGridSelector = $(this).data('grid-selector');
+        var items =  $(dataGridSelector).yiiGridView('getSelectedRows');
+
+        if (items.length) {
+            if(dataAction == 'export-csv'){
+                submitBulkActionData(dataUrl, items);
+            }
+            if(dataAction == 'export-pdf'){
+                submitBulkActionData(dataUrl, items, '_blank');
+            }
+        }
+        else{
+            if(dataAction == 'export-csv'){
+                submitBulkActionData(dataUrl, 'export-csv');
+            }
+            if(dataAction == 'export-pdf'){
+                submitBulkActionData(dataUrl, 'export-pdf', '_blank');
+            }
+        }
+    });
+    /* END: Export Action */
+
+    /* START: Reset Filter */
+    $('#resetFilterItems').click(function () {
+        var dataAction = $(this).data('action');
+        var dataUrl = $(this).data('url');
+
+        window.location.href = dataUrl;
+    });
+    /* END: Reset Filter */
+});
+
+$(window).on('load', function () {
+    resetGlobalVariable();
+});
+
+function submitBulkActionData(action, data, target, dataHidden){
+    var form = $(document.createElement('form'));
+
+    $(form).attr("action", action);
+    $(form).attr("method", "POST");
+    if(target == '_blank'){
+        $(form).attr("target", "_blank");
+    }
+
+
+    $(form).append($('<input/>', {name: yii.getCsrfParam(), value: yii.getCsrfToken(), type: 'hidden'}));
+    $(form).append($('<input/>', {name: 'items', value: data, type: 'hidden'}));
+
+    if(dataHidden){
+        $(form).append($('<input/>', {name: 'hidden_value', value: dataHidden, type: 'hidden'}));
+    }
+
+    form.appendTo(document.body);
+
+    $(form).submit();
+    $(form).remove();
+}
+
+function percentCalculation (baseAmount, currentAmount) {
+    if(isNaN(baseAmount) || isNaN(currentAmount)){
+        return '';
+    }
+
+    var diffPercent = ((currentAmount * 100) / baseAmount);
+    return isNaN(diffPercent) ? '' :  diffPercent;
+}
+
+function percentPrice (price, percentage) {
+    if(isNaN(price) || isNaN(percentage)){
+        return '';
+    }
+
+    var calcPrice  = ( price * percentage / 100).toFixed(2);
+    return isNaN(calcPrice) ? '' :  calcPrice;
+}
+
+function resetGlobalVariable(){
+
+    scrollTop    = jQuery(window).scrollTop();
+    windowWidth  = jQuery(window).width();
+    windowHeight = jQuery(window).height();
+    pageHeight   = jQuery(document).height();
+
+    $('#content-wrapper').css('min-height', (windowHeight - 100));
+}
